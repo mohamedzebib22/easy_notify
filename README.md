@@ -1,39 +1,112 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+# 📦 Easy Notify
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
+Easy Notify is a simple Flutter package for local notifications with support for scheduled, repeated, and instant notifications. It also provides a one-click setup script to add required permissions and Android configuration automatically.
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+## ✨ Features
 
-## Features
+- 🔔 Instant Notifications
+- ⏰ Scheduled Notifications
+- 🔁 Repeated Notifications
+- ✅ Handles Android permissions automatically
+- 📦 One-time setup via CLI
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+---
 
-## Getting started
+## 🚀 Getting Started
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+### 1. Add Dependency
 
-## Usage
+In your `pubspec.yaml`:
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
-```dart
-const like = 'sample';
+```yaml
+dependencies:
+  flutter_local_notifications: ^17.1.0
+  timezone: ^0.9.0
+  permission_handler: ^12.0.1
+  path_provider: ^2.1.2
 ```
 
-## Additional information
+---
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+### 2. Install Setup Files
+
+Run this command to auto-insert permissions and required configuration into your Android project:
+
+```bash
+dart run easy_notify:install
+```
+
+This will:
+- Add permissions to `AndroidManifest.xml`
+- Add required receivers
+- Replace `MainActivity.kt` with a version that supports exact alarms and battery optimization access
+
+---
+
+### 3. Initialize in `main()`
+
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await EasyNotify.init();
+  runApp(MyApp());
+}
+```
+
+---
+
+### 4. Usage
+
+#### 📢 Show instant notification:
+
+```dart
+EasyNotify.showBasicNotification(
+  id: 1,
+  title: 'Hello',
+  body: 'This is an instant notification',
+);
+```
+
+#### ⏳ Scheduled Notification:
+
+```dart
+EasyNotify.showScheduledNotification(
+  id: 2,
+  title: 'Reminder',
+  body: 'This will appear after 10 seconds',
+  duration: Duration(seconds: 10),
+);
+```
+
+#### 🔁 Repeating Notification:
+
+```dart
+EasyNotify.showRepeatedNotification(
+  id: 3,
+  title: 'Daily',
+  body: 'This will repeat daily',
+);
+```
+
+---
+
+## 🛠 CLI Commands
+
+| Command | Description |
+|--------|-------------|
+| `dart run easy_notify:install` | Auto-inserts permissions and patches Android files |
+
+---
+
+## 📄 Notes
+
+- Make sure your `MainActivity.kt` file is backed up before running the install command.
+- The patching works only with Kotlin-based Android apps.
+- For Android 13+, exact alarms require special permissions.
+
+---
+
+## 📦 License
+
+MIT License.
