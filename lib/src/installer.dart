@@ -3,7 +3,7 @@ import 'dart:io';
 class EasyNotifyInstaller {
   static Future<void> run() async {
     await _updateAndroidManifest();
-    await _updateMainActivity();
+    await _updateIOSInfoPlist(); // ✅ إضافة دعم iOS
   }
 
   static Future<void> _updateAndroidManifest() async {
@@ -63,61 +63,70 @@ class EasyNotifyInstaller {
     }
   }
 
-  static Future<void> _updateMainActivity() async {
-    final dir = Directory('android/app/src/main/kotlin/');
-    if (!dir.existsSync()) {
-      print('❌ Kotlin source folder not found.');
+  static Future<void> _updateIOSInfoPlist() async {
+    final path = 'ios/Runner/Info.plist';
+    final file = File(path);
+
+    if (!file.existsSync()) {
+      print('❌ Info.plist not found.');
       return;
     }
 
-    final ktFile = dir
-        .listSync(recursive: true)
-        .whereType<File>()
-        .firstWhere((f) => f.path.endsWith('MainActivity.kt'), orElse: () => File(''));
+    String content = await file.readAsString();
+    bool updated = false;
 
-    if (!ktFile.existsSync()) {
-      print('❌ MainActivity.kt not found.');
-      return;
-    }
-
-    String content = await ktFile.readAsString();
-    if (content.contains('getSdkInt') && content.contains('openBatterySettings')) {
-      print('ℹ️ MainActivity.kt already patched.');
-      return;
-    }
-
-    final newContent = '''
-import android.content.Intent
-import android.os.Build
-import android.os.Bundle
-import android.provider.Settings
-import io.flutter.embedding.android.FlutterActivity
-import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.plugin.common.MethodChannel
-
-class MainActivity : FlutterActivity() {
-    private val CHANNEL = "easy_notify_permissions"
-
-    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler {
-                call, result ->
-            when (call.method) {
-                "getSdkInt" -> result.success(Build.VERSION.SDK_INT)
-                "openBatterySettings" -> {
-                    val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    startActivity(intent)
-                    result.success(true)
-                }
-                else -> result.notImplemented()
-            }
-        }
-    }
-}
+    // UIBackgroundModes
+    if (!content.contains('<key>UIBackgroundModes</key>')) {
+      final backgroundModes = '''
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>fetch</string>
+    <string>remote-notification</string>
+  </array>
 ''';
+      content = content.replaceFirst('</dict>', '$backgroundModes\n</dict>');
+      print('✅ Added UIBackgroundModes.');
+      updated = true;
+    }
 
-    await ktFile.writeAsString(newContent);
-    print('✅ MainActivity.kt replaced with patched version.');
+    // NSUserTrackingUsageDescription
+    if (!content.contains('<key>NSUserTrackingUsageDescription</key>')) {
+      final trackingUsage = '''
+  <key>NSUserTrackingUsageDescription</key>
+  <string>This identifier will be used to deliver personalized ads to you.</string>
+''';
+      content = content.replaceFirst('</dict>', '$trackingUsage\n</dict>');
+      print('✅ Added NSUserTrackingUsageDescription.');
+      updated = true;
+    }
+
+    // NSCalendarsUsageDescription
+    if (!content.contains('<key>NSCalendarsUsageDescription</key>')) {
+      final calendarUsage = '''
+  <key>NSCalendarsUsageDescription</key>
+  <string>We use your calendar for scheduling notifications</string>
+''';
+      content = content.replaceFirst('</dict>', '$calendarUsage\n</dict>');
+      print('✅ Added NSCalendarsUsageDescription.');
+      updated = true;
+    }
+
+    // FirebaseAppDelegateProxyEnabled (اختياري)
+    if (!content.contains('<key>FirebaseAppDelegateProxyEnabled</key>')) {
+      final proxySetting = '''
+  <key>FirebaseAppDelegateProxyEnabled</key>
+  <false/>
+''';
+      content = content.replaceFirst('</dict>', '$proxySetting\n</dict>');
+      print('✅ Added FirebaseAppDelegateProxyEnabled = false.');
+      updated = true;
+    }
+
+    if (updated) {
+      await file.writeAsString(content);
+      print('✅ Info.plist updated.');
+    } else {
+      print('ℹ️ Info.plist already up to date.');
+    }
   }
 }

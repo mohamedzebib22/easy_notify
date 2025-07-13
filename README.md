@@ -1,46 +1,61 @@
 
 # 📦 Easy Notify
 
-Easy Notify is a simple Flutter package for local notifications with support for scheduled, repeated, and instant notifications. It also provides a one-click setup script to add required permissions and Android configuration automatically.
-
-## ✨ Features
-
-- 🔔 Instant Notifications
-- ⏰ Scheduled Notifications
-- 🔁 Repeated Notifications
-- ✅ Handles Android permissions automatically
-- 📦 One-time setup via CLI
+Easy Notify is a simple Flutter package for local notifications with support for scheduled, repeated, and instant notifications. It also provides a one-click setup script to add required permissions and Android/iOS configuration automatically.
 
 ---
 
 ## 🚀 Getting Started
 
-### 1. Add Dependency
+### 1. Install the Package
 
 In your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  flutter_local_notifications: ^17.1.0
-  timezone: ^0.9.0
-  permission_handler: ^12.0.1
-  path_provider: ^2.1.2
+  easy_notify: ^1.0.0
+```
+
+Then run:
+
+```bash
+flutter pub get
 ```
 
 ---
 
-### 2. Install Setup Files
+### 2. Run One-Time Setup (Android + iOS)
 
-Run this command to auto-insert permissions and required configuration into your Android project:
+To automatically insert all required permissions and receivers into your native files, run:
 
 ```bash
 dart run easy_notify:install
 ```
 
 This will:
-- Add permissions to `AndroidManifest.xml`
-- Add required receivers
-- Replace `MainActivity.kt` with a version that supports exact alarms and battery optimization access
+
+- ✅ Add necessary permissions to `AndroidManifest.xml`
+- ✅ Add notification receivers to Android
+- ✅ Add background modes and permissions to iOS `Info.plist`
+
+> 💡 **Important for Android (Desugaring Issue):**  
+> If you're using a modern Flutter version (3.19+), you may need to enable core library desugaring to avoid build errors.
+
+In `android/app/build.gradle.kts`, make sure you have:
+
+```kotlin
+android {
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
+    }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+}
+```
 
 ---
 
@@ -50,6 +65,7 @@ This will:
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyNotify.init();
+  await EasyNotifyPermissions.requestAll();
   runApp(MyApp());
 }
 ```
@@ -95,15 +111,15 @@ EasyNotify.showRepeatedNotification(
 
 | Command | Description |
 |--------|-------------|
-| `dart run easy_notify:install` | Auto-inserts permissions and patches Android files |
+| `dart run easy_notify:install` | Auto-inserts permissions and patches Android/iOS native files |
 
 ---
 
 ## 📄 Notes
 
-- Make sure your `MainActivity.kt` file is backed up before running the install command.
-- The patching works only with Kotlin-based Android apps.
-- For Android 13+, exact alarms require special permissions.
+- Make sure your project uses Kotlin for Android native code.
+- iOS apps must run on real devices to test notifications (not simulator).
+- You do NOT need to manually add dependencies like `flutter_local_notifications`, `timezone`, etc. — they are already bundled.
 
 ---
 
